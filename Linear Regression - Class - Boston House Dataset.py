@@ -8,12 +8,12 @@ import time
 import math
 
 
-class LinearRegression(X, y, split):
+class LinearRegression:
 
-    def __init__(self):
+    def __init__(self, X: ndarray, y: ndarray, split: float = 0.25):
 
-        self.y == y
-        self.X == X
+        self.y = y
+        self.X = X
         self.split = split
 
         r = np.c_[self.X.reshape(len(self.X), -1), self.y.reshape(len(self.y), -1)]
@@ -32,8 +32,21 @@ class LinearRegression(X, y, split):
         self.weights['W'] = np.random.rand(self.X.shape[1], 1)
         self.weights['B'] = np.random.randn(1, 1)
 
-    def move_forward(self, X_batch: ndarray = self.X_train, y_batch: ndarray = self.y_train,
-                     weights: Dict[str, ndarray] = self.weights) -> Tuple[float, Dict[str, ndarray]]:
+        self.learning_rate = 0.001
+        self.epochs = 1000
+
+        self.__repr__()
+
+    def __repr__(self):
+        pass
+
+    def _move_forward(self, **kwargs):
+        X_batch = kwargs.get('X_batch', self.X_train)
+        y_batch = kwargs.get('y_batch', self.y_train)
+        weights = kwargs.get('weights', self.weights)
+
+        # X_batch: ndarray = self.X_train, y_batch: ndarray = self.y_train,
+        # weights: Dict[str, ndarray] = self.weights) -> Tuple[float, Dict[str, ndarray]]:
 
         assert X_batch.shape[0] == y_batch.shape[0]
         assert X_batch.shape[1] == weights['W'].shape[0]
@@ -58,18 +71,15 @@ class LinearRegression(X, y, split):
     def rmse(y_pred: ndarray, y: ndarray) -> float:
         return np.sqrt(np.mean(np.power(y - y_pred, 2)))
 
-    def loss_grads(forward: Dict[str, ndarray], weights: Dict[str, ndarray]) -> Dict[str, ndarray]:
+    def _loss_grads(forward: Dict[str, ndarray], weights: Dict[str, ndarray]) -> Dict[str, ndarray]:
         lossgrad = dict()
 
         dLdP = -2 * (forward['Y'] - forward['P'])
         dPdN = np.ones_like(forward['N'])
         dPdB = np.ones_like(weights['B'])
         dLdN = dLdP * dPdN
-
         dNdW = np.transpose(forward['X'], (1, 0))
-
         dLdW = np.dot(dNdW, dLdN)
-
         dLdB = (dLdP * dPdB).sum(axis=0)
 
         lossgrad['W'] = dLdW
@@ -77,7 +87,10 @@ class LinearRegression(X, y, split):
 
         return lossgrad
 
-    def fit(self, learning_rate: float = learning_rate_default, epochs: int = epochs_default):
+    def fit(self, **kwargs):
+        learning_rate = kwargs.get('learning_rate', self.learning_rate)
+        epochs = kwargs.get('epochs', self.epochs)
+
         pass
 
 
