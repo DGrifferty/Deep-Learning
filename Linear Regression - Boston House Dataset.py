@@ -17,14 +17,12 @@ features = boston.feature_names
 
 s = StandardScaler()
 data = s.fit_transform(data)
-default_batch_size = round(0.1 * len(data))
 group = Tuple[ndarray, ndarray, ndarray, ndarray]
 
 print('Started')
+
 learning_rate_default = 0.0001
 epochs_default = 4000
-
-
 
 
 def create_weights(X: ndarray) -> Dict[str, ndarray]:
@@ -125,8 +123,7 @@ def predict_compare(X, y, weights):
 
     N = np.dot(X, weights['W'])
     Pred = N + weights['B']
-    # print(f'Pred= {Pred[0:5]}')
-    # print(f'y= {y[0:5]}')
+
     print(f'Mean absolute error: {mae(Pred, y):.2f}')
     print(f'Root mean squared error: {rmse(Pred, y):.2f}')
 
@@ -165,8 +162,7 @@ def print_results_to_file(y_train, pred_train, y_test, pred_test, starting_weigh
         difference_train = np.array(list())
 
         for index, value in enumerate(y_train):
-            # print(f'index: {index}')
-            # print(f'value: {value}')
+
             difference_train = np.concatenate((difference_train, pred_train[index] - y_train[index]))
             f.write(f'y_train[{index}] = {value}, pred_train[{index}] = {pred_train[index]} \
              difference = {difference_train[index]:.2f} \n')
