@@ -22,11 +22,11 @@ class LinearRegression:
 
         np.random.shuffle(r)
 
-        self.X_train = X[0: round(len(self.X) * self.split), :]
-        self.y_train = y[0: round(len(self.X) * self.split), :]
+        self.X_train = self.X[0: round(len(self.X) * self.split), :]
+        self.y_train = self.y[0: round(len(self.X) * self.split), :]
 
-        self.X_test = X[0: round(len(self.X) * self.split), :]
-        self.y_test = y[0: round(len(self.X) * self.split), :]
+        self.X_test = self.X[0: round(len(self.X) * self.split), :]
+        self.y_test = self.y[0: round(len(self.X) * self.split), :]
 
         self.weights = dict()
         self.weights['W'] = np.random.rand(self.X.shape[1], 1)
@@ -34,6 +34,7 @@ class LinearRegression:
 
         self.learning_rate = 0.001
         self.epochs = 1000
+        self.batch_size = 40  # Make variable for different data sizes
 
         self.__repr__()
 
@@ -63,6 +64,10 @@ class LinearRegression:
         forward['N'] = N
         forward['P'] = Pred
 
+        self.forward = forward
+
+        print('completed')
+
         return forward
 
     def mae(y_pred: ndarray, y: ndarray) -> float:
@@ -71,7 +76,7 @@ class LinearRegression:
     def rmse(y_pred: ndarray, y: ndarray) -> float:
         return np.sqrt(np.mean(np.power(y - y_pred, 2)))
 
-    def _loss_grads(forward: Dict[str, ndarray], weights: Dict[str, ndarray]) -> Dict[str, ndarray]:
+    def _loss_grads(self, forward: Dict[str, ndarray], weights: Dict[str, ndarray]) -> Dict[str, ndarray]:
         lossgrad = dict()
 
         dLdP = -2 * (forward['Y'] - forward['P'])
@@ -85,13 +90,54 @@ class LinearRegression:
         lossgrad['W'] = dLdW
         lossgrad['B'] = dLdB
 
+        self.lossgrad = lossgrad
+
         return lossgrad
 
+    def random_batch(X: ndarray, y: ndarray, batch_size: int) -> Tuple[ndarray, ndarray]:
+        assert X.ndim == y.ndim == 2
+
+        r = np.c_[X.reshape(len(X), -1), y.reshape(len(y), -1)]
+        X = r[:, :X.size // len(X)].reshape(X.shape)
+        y = r[:, X.size // len(X):].reshape(-1, 1)
+
+        np.random.shuffle(r)
+
+        X_batch = X[0: batch_size, :]
+        y_batch = y[0: batch_size, :]
+
+        return X_batch, y_batch
+
     def fit(self, **kwargs):
+        X = kwargs.get('X', self.X_train)
+        y = kwargs.get('y', self.y_train)
+        weights = kwargs.get('weights', self.weights)
         learning_rate = kwargs.get('learning_rate', self.learning_rate)
         epochs = kwargs.get('epochs', self.epochs)
 
-        pass
+        for i in range(epochs):
+            X_batch, y_batch = random_batch(X, y, round(0.1 * len(X)))
+            move_forward(X_batch, y_batch, weights)
+            loss_grads(self.forward, weights)
+
+            for key in weights.keys():
+                weights[key] -= learning_rate * self.lossgrads[key]
+
+        self.weights = weights
+
+        return weights
 
 
 
+
+boston = load_boston()
+data = boston.data
+target = boston.target
+features = boston.feature_names
+
+s = StandardScaler()
+data = s.fit_transform(data)
+
+test = LinearRegression(data, target)
+test._move_forward()
+test.fit()
