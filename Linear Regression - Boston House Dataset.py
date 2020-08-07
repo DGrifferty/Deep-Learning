@@ -7,7 +7,6 @@ import time
 
 start_time = time.time()
 
-
 boston = load_boston()
 data = boston.data
 target = boston.target
@@ -19,6 +18,8 @@ default_batch_size = round(0.1 * len(data))
 group = Tuple[ndarray, ndarray, ndarray, ndarray]
 
 print('Started')
+learning_rate_default = 0.0001
+epochs_default = 4000
 
 def create_weights(X: ndarray) -> Dict[str, ndarray]:
 
@@ -118,13 +119,15 @@ def predict_compare(X, y, weights):
 
     N = np.dot(X, weights['W'])
     Pred = N + weights['B']
-    print(f'Pred= {Pred[0:5]}')
-    print(f'y= {y[0:5]}')
+    # print(f'Pred= {Pred[0:5]}')
+    # print(f'y= {y[0:5]}')
+    print(f'Mean absolute error: {mae(Pred, y):.2f}')
+    print(f'Root mean squared error: {rmse(Pred, y):.2f}')
 
-    return
+    return Pred
 
 
-def train(X, y, weights: Dict[str, ndarray], learning_rate: float = 0.001, epochs: int = 10000):
+def train(X, y, weights: Dict[str, ndarray], learning_rate: float = learning_rate_default, epochs: int = epochs_default):
 
     for i in range(epochs):
         X_batch, y_batch = random_batch(X, y, round(0.1 * len(X)))
@@ -137,23 +140,70 @@ def train(X, y, weights: Dict[str, ndarray], learning_rate: float = 0.001, epoch
     return weights
 
 
+def print_results_to_file(y_train, pred_train, y_test, pred_test, starting_weights, starting_bias, weights, time_taken,
+                          learning_rate: float = learning_rate_default, epochs: int = epochs_default):
+    with open('Linear Regression - Boston House Dataset - Results.txt', 'w+') as f:
+        np.set_printoptions(precision=2)
+        f.write(f'Learning rate - {learning_rate} \n')
+        f.write(f'Epochs - {epochs} \n')
+        f.write(f'Time taken - {time_taken:.2f} \n')
+        f.write(f'Starting weights - {starting_weights} \n')
+        f.write(f'Final weights - {weights["W"]} \n')
+        f.write(f'Starting Bias - {starting_bias} \n')
+        f.write(f'Final - Bias - {weights["B"]} \n')
+        f.write(f'Mean absolute error training set: {mae(pred_train, y_train):.2f} \n')
+        f.write(f'Root mean squared error training set: {rmse(pred_train, y_train):.2f} \n')
+        f.write(f'Mean absolute error test set: {mae(pred_test, y_test):.2f} \n')
+        f.write(f'Root mean squared error test set: {rmse(pred_test, y_test):.2f} \n')
+
+        difference_train = np.array(list())
+
+        for index, value in enumerate(y_train):
+            # print(f'index: {index}')
+            # print(f'value: {value}')
+            difference_train = np.concatenate((difference_train, pred_train[index] - y_train[index]))
+            f.write(f'y_train[{index}] = {value}, pred_train[{index}] = {pred_train[index]} \
+             difference = {difference_train[index]:.2f} \n')
+
+        f.write(f'Total difference training set-  {difference_train.sum():.2f}\n ')
+        f.write(f'Mean difference training set- {difference_train.mean():.2f}\n ')
+
+        difference_test = np.array(list())
+
+        for index, value in enumerate(y_test):
+            difference_test = np.concatenate((difference_test, pred_test[index] - y_test[index]))
+            f.write(f'y_test[{index}] = {value}, pred_test[{index}] = {pred_test[index]}\
+             difference = {difference_test[index]:.2f} \n')
+
+        f.write(f'Total difference test set-  {difference_test.sum():.2f}\n ')
+        f.write(f'Mean difference test set- {difference_test.mean():.2f}\n ')
+
+
+def make_graphs():
+    pass
+
+
 X_train, y_train, X_test, y_test = random_train_test_split(data, target)
 weights = create_weights(X_train)
+starting_weights = weights['W'].copy()
+starting_bias = weights['B'].copy()
 
 predict_compare(X_test, y_test, weights)
 train(X_train,  y_train, weights)
-predict_compare(X_test, y_test, weights)
-
-predict_compare(X_train, y_train, weights)
+print('Predict compare - train')
+pred_train = predict_compare(X_train, y_train, weights)
+print('predict compare - test')
+pred_test = predict_compare(X_test, y_test, weights)
 
 
 # TODO: Create a plot of error over training
 # Turn this into class
 # to do sort out train batching
 # print results to file
-# create time checkmark to print to file
+# create time check mark to print to file
 
+time_taken = time.time()-start_time
 
-finish_time = time.time()
+print(f'Time taken = {time_taken:.2f}s')
 
-print(f'Time taken = {finish_time - start_time:.2f}s')
+print_results_to_file(y_train, pred_train, y_test, pred_test, starting_weights, starting_bias, weights, time_taken)
