@@ -3,7 +3,10 @@ from numpy import ndarray
 from typing import Callable, Dict, Tuple, List
 from sklearn.datasets import load_boston
 from sklearn.preprocessing import StandardScaler
+from matplotlib import pyplot as plt
 import time
+import math
+
 
 start_time = time.time()
 
@@ -20,6 +23,9 @@ group = Tuple[ndarray, ndarray, ndarray, ndarray]
 print('Started')
 learning_rate_default = 0.0001
 epochs_default = 4000
+
+
+
 
 def create_weights(X: ndarray) -> Dict[str, ndarray]:
 
@@ -179,8 +185,25 @@ def print_results_to_file(y_train, pred_train, y_test, pred_test, starting_weigh
         f.write(f'Mean difference test set- {difference_test.mean():.2f}\n ')
 
 
-def make_graphs():
-    pass
+def round_up(z):
+    return int(math.ceil(z / 10.0)) * 10.0
+
+
+def make_graphs(y, y_pred):
+    plt.ylabel('Actual')
+    plt.xlabel('Predicted')
+
+    if np.amax(y) > np.amax(y_pred):
+        max = round_up(np.amax(y)) + 10
+    else:
+        max = round_up(np.amax(y_pred)) + 10
+
+    plt.ylim([0, max])
+    plt.xlim([0, max])
+
+    plt.scatter(y_pred, y)
+    plt.plot([0, max], [0, max])
+    plt.show()
 
 
 X_train, y_train, X_test, y_test = random_train_test_split(data, target)
@@ -195,7 +218,6 @@ pred_train = predict_compare(X_train, y_train, weights)
 print('predict compare - test')
 pred_test = predict_compare(X_test, y_test, weights)
 
-
 # TODO: Create a plot of error over training
 # Turn this into class
 # to do sort out train batching
@@ -207,3 +229,4 @@ time_taken = time.time()-start_time
 print(f'Time taken = {time_taken:.2f}s')
 
 print_results_to_file(y_train, pred_train, y_test, pred_test, starting_weights, starting_bias, weights, time_taken)
+make_graphs(y_test, pred_test)
