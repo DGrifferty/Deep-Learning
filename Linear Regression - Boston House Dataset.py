@@ -6,7 +6,7 @@ from sklearn.preprocessing import StandardScaler
 import time
 
 start_time = time.time()
-# print(f'Start time: {start_time}')
+
 
 boston = load_boston()
 data = boston.data
@@ -20,7 +20,6 @@ group = Tuple[ndarray, ndarray, ndarray, ndarray]
 
 print('Started')
 
-print(data.shape)
 def create_weights(X: ndarray) -> Dict[str, ndarray]:
 
     weights = dict()
@@ -47,7 +46,6 @@ def random_train_test_split(X: ndarray, y: ndarray, split: float = 0.75) -> grou
 
     X_test = X[0: round(len(X) * split), :]
     y_test = y[0: round(len(X) * split), :]
-    print(f'y: shape in split - {y_train.shape}')
 
     return X_train, y_train, X_test, y_test
 
@@ -122,17 +120,11 @@ def predict_compare(X, y, weights):
     Pred = N + weights['B']
     print(f'Pred= {Pred[0:5]}')
     print(f'y= {y[0:5]}')
-    # percent_correct = np.mean(y - 0.1 < Pred < y + 0.1)
-    #print(percent_correct)
 
     return
 
 
 def train(X, y, weights: Dict[str, ndarray], learning_rate: float = 0.001, epochs: int = 10000):
-
-
-    # perm = np.random.permutation(X.shape[0])
-    # X, y = X[perm], y[perm]
 
     for i in range(epochs):
         X_batch, y_batch = random_batch(X, y, round(0.1 * len(X)))
@@ -147,8 +139,7 @@ def train(X, y, weights: Dict[str, ndarray], learning_rate: float = 0.001, epoch
 
 X_train, y_train, X_test, y_test = random_train_test_split(data, target)
 weights = create_weights(X_train)
-# TODO: Create a plot of error over training
-# Turn this into class
+
 predict_compare(X_test, y_test, weights)
 train(X_train,  y_train, weights)
 predict_compare(X_test, y_test, weights)
@@ -156,13 +147,13 @@ predict_compare(X_test, y_test, weights)
 predict_compare(X_train, y_train, weights)
 
 
-
-
+# TODO: Create a plot of error over training
+# Turn this into class
 # to do sort out train batching
 # print results to file
 # create time checkmark to print to file
 
 
 finish_time = time.time()
-# print(f'Time finished = {finish_time}')
-print(f'Time taken = {finish_time - start_time}')
+
+print(f'Time taken = {finish_time - start_time:.2f}s')
