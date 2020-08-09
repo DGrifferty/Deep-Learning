@@ -33,6 +33,8 @@ class LinearRegression:
         self.weights['W'] = np.random.rand(self.X.shape[1], 1)
         self.weights['B'] = np.random.randn(1, 1)
 
+        self.weights_unchanged = np.copy(self.weights['W'])
+
         self.learning_rate = 0.001
         self.epochs = 10000
         self.batch_size = 50  # Make variable for different data sizes
@@ -146,6 +148,25 @@ class LinearRegression:
 
         pred = np.dot(X, weights['W']) + weights['B']
 
+        if self.equal_array(self.weights_unchanged,
+                            self.weights['W']):
+            values = False
+            if self.equal_array(y, self.y_test):
+                print('For test set before fitting:')
+            elif self.equal_array(y, self.y_train):
+                print('For training set before fitting')
+        elif self.equal_array(y, self.y_test):
+            print(f'For test set after fitting-')
+            values = True
+        elif self.equal_array(y, self.y_train):
+            print(f'For training set after fitting-')
+            values = True
+
+        if values == True:
+            print(f'Learning rate - {self.learning_rate}\n '
+                  f'Epochs - {self.epochs}\n '
+                  f'Batch size - {self.batch_size}')
+
         print(f'Mean absolute error: {self.mae(pred, y):.2f}')
         print(f'Root mean squared error: {self.rmse(pred, y):.2f}')
 
@@ -181,6 +202,7 @@ class LinearRegression:
             if i % tick_spacing == 0:
                 tick_list.append(i)
 
+        plt.rcParams['font.size'] = 8
         plt.ylim([0, max])
         plt.xlim([0, max])
         plt.ylabel('Actual')
@@ -195,7 +217,15 @@ class LinearRegression:
 
         plt.legend(loc='best')
 
-        if self.equal_array(y, self.y_test):
+        if self.equal_array(self.weights_unchanged,
+                            self.weights['W']):
+            if self.equal_array(y, self.y_test):
+                plt.title('Comparing actual values to predicted values'
+                          ' before fitting for test set')
+            elif self.equal_array(y, self.y_train):
+                plt.title('Comparing actual values to predicted values'
+                          ' before fitting for training set')
+        elif self.equal_array(y, self.y_test):
             plt.title('Comparing actual values to predicted values'
                       ' for test set')
         elif self.equal_array(y, self.y_train):
@@ -222,6 +252,9 @@ if __name__ == '__main__':
 
     test = LinearRegression(data, target)
     test.make_graphs()
+    y_pred = test.predict_compare(X=test.X_train, y=test.y_train,
+                                  weights=test.weights)
+    test.make_graphs(y_pred=y_pred, y=test.y_train)
     test.fit()
     test.make_graphs()
     y_pred = test.predict_compare(X=test.X_train, y=test.y_train,
