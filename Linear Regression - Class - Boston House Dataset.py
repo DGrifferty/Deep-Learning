@@ -16,7 +16,8 @@ class LinearRegression:
         self.X = X
         self.split = split
 
-        r = np.c_[self.X.reshape(len(self.X), -1), self.y.reshape(len(self.y), -1)]
+        r = np.c_[self.X.reshape(len(self.X), -1),
+                  self.y.reshape(len(self.y), -1)]
         self.X = r[:, :self.X.size // len(self.X)].reshape(X.shape)
         self.y = r[:, self.X.size // len(self.X):].reshape(-1, 1)
 
@@ -41,7 +42,7 @@ class LinearRegression:
     def __repr__(self):
         pass
 
-    def _move_forward(self, **kwargs):
+    def move_forward(self, **kwargs):
         X_batch = kwargs.get('X_batch', self.X_train)
         y_batch = kwargs.get('y_batch', self.y_train)
         weights = kwargs.get('weights', self.weights)
@@ -66,18 +67,17 @@ class LinearRegression:
 
         self.forward = forward
 
-        print('completed')
-
         return forward
 
-    def mae(y_pred: ndarray, y: ndarray) -> float:
+    def mae(self, y_pred: ndarray, y: ndarray) -> float:
         return np.mean(np.abs(y - y_pred))
 
-    def rmse(y_pred: ndarray, y: ndarray) -> float:
+    def rmse(self, y_pred: ndarray, y: ndarray) -> float:
         return np.sqrt(np.mean(np.power(y - y_pred, 2)))
 
-    def _loss_grads(self, forward: Dict[str, ndarray], weights: Dict[str, ndarray]) -> Dict[str, ndarray]:
-        lossgrad = dict()
+    def loss_grads(self, **kwargs):
+        forward = kwargs.get('forward', self.forward)
+        weights = kwargs.get('weights', self.weights)
 
         dLdP = -2 * (forward['Y'] - forward['P'])
         dPdN = np.ones_like(forward['N'])
@@ -87,6 +87,7 @@ class LinearRegression:
         dLdW = np.dot(dNdW, dLdN)
         dLdB = (dLdP * dPdB).sum(axis=0)
 
+        lossgrad = dict()
         lossgrad['W'] = dLdW
         lossgrad['B'] = dLdB
 
@@ -94,7 +95,12 @@ class LinearRegression:
 
         return lossgrad
 
-    def random_batch(X: ndarray, y: ndarray, batch_size: int) -> Tuple[ndarray, ndarray]:
+    def random_batch(self, **kwargs):
+
+        X = kwargs.get('X', self.X_train)
+        y = kwargs.get('y', self.y_train)
+        batch_size = kwargs.get('batch_size', self.batch_size)
+
         assert X.ndim == y.ndim == 2
 
         r = np.c_[X.reshape(len(X), -1), y.reshape(len(y), -1)]
@@ -109,6 +115,7 @@ class LinearRegression:
         return X_batch, y_batch
 
     def fit(self, **kwargs):
+
         X = kwargs.get('X', self.X_train)
         y = kwargs.get('y', self.y_train)
         weights = kwargs.get('weights', self.weights)
@@ -116,18 +123,58 @@ class LinearRegression:
         epochs = kwargs.get('epochs', self.epochs)
 
         for i in range(epochs):
-            X_batch, y_batch = random_batch(X, y, round(0.1 * len(X)))
-            move_forward(X_batch, y_batch, weights)
-            loss_grads(self.forward, weights)
+            X_batch, y_batch = self.random_batch(
+                X=X,
+                y=y,
+                batch_size=round(0.1 * len(X))
+            )
+
+            self.move_forward(X=X_batch, y=y_batch, weights=weights)
+            self.loss_grads(forward=self.forward, weights=weights)
 
             for key in weights.keys():
-                weights[key] -= learning_rate * self.lossgrads[key]
+                weights[key] -= learning_rate * self.lossgrad[key]
 
         self.weights = weights
 
         return weights
 
+    def predict_compare(self, **kwargs):
+        X = kwargs.get('X', self.X_test)
+        y = kwargs.get('y', self.y_test)
+        weights = kwargs.get('weights', self.weights)
 
+        Pred = np.dot(X, weights['W']) + weights['B']
+
+        print(f'Mean absolute error: {self.mae(Pred, y):.2f}')
+        print(f'Root mean squared error: {self.rmse(Pred, y):.2f}')
+
+        return Pred
+
+    @staticmethod
+    def round_up(z):
+        return int(math.ceil(z / 10.0)) * 10.0
+
+    def make_graphs(self, **kwargs):
+        y_pred = kwargs.get('y_pred', self.predict_compare())
+        y = kwargs.get('y', self.y_test)
+
+
+        plt.ylabel('Actual')
+        plt.xlabel('Predicted')
+
+        if np.amax(y) > np.amax(y_pred):
+            max = self.round_up(np.amax(y)) + 10
+        else:
+            max = self.round_up(np.amax(y_pred)) + 10
+
+        plt.ylim([0, max])
+        plt.xlim([0, max])
+        plt.scatter(y_pred, y)
+
+        plt.plot([0, max], [0, max])
+
+        plt.show()
 
 
 boston = load_boston()
@@ -139,5 +186,9 @@ s = StandardScaler()
 data = s.fit_transform(data)
 
 test = LinearRegression(data, target)
-test._move_forward()
 test.fit()
+test.make_graphs()
+
+# TODO: Add type casting
+# Create a kn classifier - with linear regression training - put these in a module for later use
+# Keep reading book
