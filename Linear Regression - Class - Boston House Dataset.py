@@ -3,9 +3,19 @@ from numpy import ndarray
 from typing import Callable, Dict, Tuple, List
 from sklearn.datasets import load_boston
 from sklearn.preprocessing import StandardScaler
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 import time
 import math
+
+
+def boston_data() -> Tuple[ndarray, ndarray]:
+    boston = load_boston()
+    data = boston.data
+    target = boston.target
+    s = StandardScaler()
+    data = s.fit_transform(data)
+
+    return data, target
 
 
 class LinearRegression:
@@ -47,15 +57,12 @@ class LinearRegression:
         y_batch = kwargs.get('y_batch', self.y_train)
         weights = kwargs.get('weights', self.weights)
 
-        # X_batch: ndarray = self.X_train, y_batch: ndarray = self.y_train,
-        # weights: Dict[str, ndarray] = self.weights) -> Tuple[float, Dict[str, ndarray]]:
-
         assert X_batch.shape[0] == y_batch.shape[0]
         assert X_batch.shape[1] == weights['W'].shape[0]
         assert weights['B'].shape[0] == weights['B'].shape[1] == 1
 
         N = np.dot(X_batch, weights['W'])
-        Pred = N + weights['B']
+        pred = N + weights['B']
 
         # loss = np.mean(np.power(Pred - y_batch, 2))
 
@@ -63,16 +70,18 @@ class LinearRegression:
         forward['X'] = X_batch
         forward['Y'] = y_batch
         forward['N'] = N
-        forward['P'] = Pred
+        forward['P'] = pred
 
         self.forward = forward
 
         return forward
 
-    def mae(self, y_pred: ndarray, y: ndarray) -> float:
+    @staticmethod
+    def mae(y_pred: ndarray, y: ndarray) -> ndarray:
         return np.mean(np.abs(y - y_pred))
 
-    def rmse(self, y_pred: ndarray, y: ndarray) -> float:
+    @staticmethod
+    def rmse(y_pred: ndarray, y: ndarray) -> float:
         return np.sqrt(np.mean(np.power(y - y_pred, 2)))
 
     def loss_grads(self, **kwargs):
@@ -144,51 +153,73 @@ class LinearRegression:
         y = kwargs.get('y', self.y_test)
         weights = kwargs.get('weights', self.weights)
 
-        Pred = np.dot(X, weights['W']) + weights['B']
+        pred = np.dot(X, weights['W']) + weights['B']
 
-        print(f'Mean absolute error: {self.mae(Pred, y):.2f}')
-        print(f'Root mean squared error: {self.rmse(Pred, y):.2f}')
+        print(f'Mean absolute error: {self.mae(pred, y):.2f}')
+        print(f'Root mean squared error: {self.rmse(pred, y):.2f}')
 
-        return Pred
+        return pred
 
     @staticmethod
     def round_up(z):
         return int(math.ceil(z / 10.0)) * 10.0
 
+    @staticmethod
+    def equal_array(a, b):
+        if b.shape != a.shape:
+            return False
+        for ai, bi in zip(a.flat, b.flat):
+            if ai != bi: return False
+        return True
+
     def make_graphs(self, **kwargs):
+
+        # not working
+
         y_pred = kwargs.get('y_pred', self.predict_compare())
         y = kwargs.get('y', self.y_test)
 
+        fig = plt.figure()
 
-        plt.ylabel('Actual')
-        plt.xlabel('Predicted')
+        fig.ylabel('Actual')
+        fig.xlabel('Predicted')
 
         if np.amax(y) > np.amax(y_pred):
             max = self.round_up(np.amax(y)) + 10
         else:
             max = self.round_up(np.amax(y_pred)) + 10
 
-        plt.ylim([0, max])
-        plt.xlim([0, max])
-        plt.scatter(y_pred, y)
+        tick_list = list()
+        tick_spacing = max // 5
+        max = int(max)
+        for i in range(max):
+            if i % tick_spacing:
+                tick_list.append(i)
 
-        plt.plot([0, max], [0, max])
+        fig.set_xticks(tick_list)
+        fig.set_yticks(tick_list)
+        fig.ylim([0, max])
+        fig.xlim([0, max])
+
+        fig.scatter(y_pred, y)
+
+        fig.plot([0, max], [0, max])
+
+        if self.equal_array(y, self.y_test):
+            fig.set_title('Comparing actual values to predicted values\
+                          for test set')
+        elif self.equal_array(y, self.y_train):
+            fig.set_title('Comparing actual values to predicted values\
+                          for training set')
+        else:
+            fig.set_title('Comparing actual values to predicted values')
 
         plt.show()
 
 
-boston = load_boston()
-data = boston.data
-target = boston.target
-features = boston.feature_names
-
-s = StandardScaler()
-data = s.fit_transform(data)
+data, target = boston_data()
 
 test = LinearRegression(data, target)
+test.make_graphs()
 test.fit()
 test.make_graphs()
-
-# TODO: Add type casting
-# Create a kn classifier - with linear regression training - put these in a module for later use
-# Keep reading book
