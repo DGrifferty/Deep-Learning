@@ -8,19 +8,9 @@ import time
 import math
 
 
-def boston_data() -> Tuple[ndarray, ndarray]:
-    boston = load_boston()
-    data = boston.data
-    target = boston.target
-    s = StandardScaler()
-    data = s.fit_transform(data)
-
-    return data, target
-
-
 class LinearRegression:
 
-    def __init__(self, X: ndarray, y: ndarray, split: float = 0.25):
+    def __init__(self, X: ndarray, y: ndarray, split: float = 0.30):
 
         self.y = y
         self.X = X
@@ -36,16 +26,16 @@ class LinearRegression:
         self.X_train = self.X[0: round(len(self.X) * self.split), :]
         self.y_train = self.y[0: round(len(self.X) * self.split), :]
 
-        self.X_test = self.X[0: round(len(self.X) * self.split), :]
-        self.y_test = self.y[0: round(len(self.X) * self.split), :]
+        self.X_test = self.X[round(len(self.X) * self.split):, :]
+        self.y_test = self.y[round(len(self.X) * self.split):, :]
 
         self.weights = dict()
         self.weights['W'] = np.random.rand(self.X.shape[1], 1)
         self.weights['B'] = np.random.randn(1, 1)
 
         self.learning_rate = 0.001
-        self.epochs = 1000
-        self.batch_size = 40  # Make variable for different data sizes
+        self.epochs = 10000
+        self.batch_size = 50  # Make variable for different data sizes
 
         self.__repr__()
 
@@ -149,6 +139,7 @@ class LinearRegression:
         return weights
 
     def predict_compare(self, **kwargs):
+
         X = kwargs.get('X', self.X_test)
         y = kwargs.get('y', self.y_test)
         weights = kwargs.get('weights', self.weights)
@@ -161,7 +152,7 @@ class LinearRegression:
         return pred
 
     @staticmethod
-    def round_up(z):
+    def round_to_10(z):
         return int(math.ceil(z / 10.0)) * 10.0
 
     @staticmethod
@@ -172,54 +163,67 @@ class LinearRegression:
             if ai != bi: return False
         return True
 
-    def make_graphs(self, **kwargs):
-
-        # not working
+    def make_graphs(self, *args, **kwargs):
 
         y_pred = kwargs.get('y_pred', self.predict_compare())
         y = kwargs.get('y', self.y_test)
 
-        fig = plt.figure()
-
-        fig.ylabel('Actual')
-        fig.xlabel('Predicted')
-
         if np.amax(y) > np.amax(y_pred):
-            max = self.round_up(np.amax(y)) + 10
+            max = self.round_to_10(np.amax(y)) + 10
         else:
-            max = self.round_up(np.amax(y_pred)) + 10
+            max = self.round_to_10(np.amax(y_pred)) + 10
 
         tick_list = list()
-        tick_spacing = max // 5
+        tick_spacing = round((0.1 * max) / 5) * 5
+
         max = int(max)
-        for i in range(max):
-            if i % tick_spacing:
+        for i in range(max + 1):
+            if i % tick_spacing == 0:
                 tick_list.append(i)
 
-        fig.set_xticks(tick_list)
-        fig.set_yticks(tick_list)
-        fig.ylim([0, max])
-        fig.xlim([0, max])
+        plt.ylim([0, max])
+        plt.xlim([0, max])
+        plt.ylabel('Actual')
+        plt.xlabel('Predicted')
 
-        fig.scatter(y_pred, y)
+        plt.scatter(y_pred, y, c='red', marker='^', label='Data')
 
-        fig.plot([0, max], [0, max])
+        plt.xticks(tick_list)
+        plt.yticks(tick_list)
+
+        plt.plot([0, max], [0, max], c='black', label='Linear')
+
+        plt.legend(loc='best')
 
         if self.equal_array(y, self.y_test):
-            fig.set_title('Comparing actual values to predicted values\
-                          for test set')
+            plt.title('Comparing actual values to predicted values'
+                      ' for test set')
         elif self.equal_array(y, self.y_train):
-            fig.set_title('Comparing actual values to predicted values\
-                          for training set')
+            plt.title('Comparing actual values to predicted values'
+                      ' for training set')
         else:
-            fig.set_title('Comparing actual values to predicted values')
+            plt.title('Comparing actual values to predicted values')
 
         plt.show()
 
 
-data, target = boston_data()
+def boston_data() -> Tuple[ndarray, ndarray]:
+    boston = load_boston()
+    data = boston.data
+    target = boston.target
+    s = StandardScaler()
+    data = s.fit_transform(data)
 
-test = LinearRegression(data, target)
-test.make_graphs()
-test.fit()
-test.make_graphs()
+    return data, target
+
+
+if __name__ == '__main__':
+    data, target = boston_data()
+
+    test = LinearRegression(data, target)
+    test.make_graphs()
+    test.fit()
+    test.make_graphs()
+    y_pred = test.predict_compare(X=test.X_train, y=test.y_train,
+                                  weights=test.weights)
+    test.make_graphs(y_pred=y_pred, y=test.y_train)
