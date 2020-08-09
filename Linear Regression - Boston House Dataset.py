@@ -49,8 +49,8 @@ def random_train_test_split(X: ndarray, y: ndarray, split: float = 0.75) -> grou
     X_train = X[0: round(len(X) * split), :]
     y_train = y[0: round(len(X) * split), :]
 
-    X_test = X[0: round(len(X) * split), :]
-    y_test = y[0: round(len(X) * split), :]
+    X_test = X[round(len(X) * split):, :]
+    y_test = y[round(len(X) * split):, :]
 
     return X_train, y_train, X_test, y_test
 
@@ -219,6 +219,7 @@ pred_test = predict_compare(X_test, y_test, weights)
 # to do sort out train batching
 # print results to file
 # create time check mark to print to file
+# Create doc string
 
 time_taken = time.time()-start_time
 
