@@ -45,8 +45,6 @@ class ML_NN_Methods:
     def __repr__(self):
         pass
 
-    def sigmoid(self, array):
-        return 1/(1+np.exp(-array))
 
     def log_time(original_function):
         def wrapper(*args, **kwargs):
@@ -163,6 +161,11 @@ class ML_NN_Methods:
     @staticmethod
     def rmse(y_pred: ndarray, y: ndarray) -> float:
         return np.sqrt(np.mean(np.power(y - y_pred, 2)))
+
+
+# New methods for NN - >
+    def sigmoid(self, array):
+        return 1/(1+np.exp(-array))
 
 
 
@@ -306,11 +309,11 @@ class nn(ML_NN_Methods):
         self.y_test = self.y[round(len(self.X) * self.split):, :]
 
         self.weights = dict()
-        self.weights['W1'] = np.random.rand(self.X.shape[1], 1)
-        self.weights['B1'] = np.random.randn(1, 1)
+        self.weights['W1'] = np.random.rand(self.X.shape[1], 13)
+        self.weights['B1'] = np.random.randn(1, 13)
 
-        self.weights['W2'] = self.sigmoid(self.weights['W1'])
-        self.weights['B2'] = self.sigmoid(self.weights['B1'])
+        self.weights['W2'] = np.random.rand(13, 1)
+        self.weights['B2'] = np.random.randn(1, 1)
 
         self.weights_unchanged = np.copy(self.weights['W1'])
 
@@ -361,21 +364,37 @@ class nn(ML_NN_Methods):
         forward = kwargs.get('forward', self.forward)
         weights = kwargs.get('weights', self.weights)
 
-        dLdP = -2 * (forward['Y'] - forward['P'])
-        dPdN = np.ones_like(forward['N'])
-        dPdB = np.ones_like(weights['B'])
-        dLdN = dLdP * dPdN
-        dNdW = np.transpose(forward['X'], (1, 0))
-        dLdW = np.dot(dNdW, dLdN)
-        dLdB = (dLdP * dPdB).sum(axis=0)
+        dLdP = -(forward['y'] - forward_['P'])
+        dPdM2 = np.ones_like(forward_info['M2'])
+        dLdM2 = dLdP * dPdM2
+        dPdB2 = np.ones_like(weights['B2'])
+        dLdB2 = (dLdP * dPdB2).sum(axis=0)
+        dM2dW2 = np.transpose(forward['O1'], (1, 0))
+        dLdW2 = np.dot(dM2dW2, dLdP)
+        dM2dO1 = np.transpose(weights['W2'], (1, 0))
+        dLdO1 = np.dot(dLdM2, dM2dO1)
+        dO1dN1 = sigmoid(forward_info['N1']) * (
+                    1 - sigmoid(forward['N1']))
 
-        lossgrad = dict()
-        lossgrad['W'] = dLdW
-        lossgrad['B'] = dLdB
+        dLdN1 = dLdO1 * dO1dN1
+        dN1dB1 = np.ones_like(weights['B1'])
+        dN1dM1 = np.ones_like(forward['M1'])
+        dLdB1 = (dLdN1 * dN1dB1).sum(axis=0)
+        dLdM1 = dLdN1 * dN1dM1
+        dM1dW1 = np.transpose(forward['X'], (1, 0))
+        dLdW1 = np.dot(dM1dW1, dLdM1)
+
+        lossgrad: Dict[str, ndarray] = {}
+        lossgrad['W2'] = dLdW2
+        lossgrad['B2'] = dLdB2.sum(axis=0)
+        lossgrad['W1'] = dLdW1
+        lossgrad['B1'] = dLdB1.sum(axis=0)
 
         self.lossgrad = lossgrad
 
         return lossgrad
+
+    def predict(self, ):
 
     @ML_NN_Methods.log_time
     def fit(self, **kwargs):
